@@ -16,9 +16,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<any[]>([]);
 
   const refreshBasket = async () => {
-    const data = await getBasket();
-    setItems(data);
-  };
+  const data = await getBasket();
+  setItems(data?.items ?? []); // fallback [] nếu null
+};
 
   const addToCart = async (productId: string, quantity: number) => {
     await addItem(productId, quantity);

@@ -10,3 +10,12 @@ export const register = async (username: string, email: string , password: strin
     const data = await api.post('/api/auth/register', { username, email, password });
     return data;
 }
+
+export const getInforUser = async () => {
+  const { data } = await api.get("/api/auth/me");
+  return {
+    userName: data.userName, // đúng với JSON backend trả
+    email: data.email,
+    role: data.role,
+  };
+};

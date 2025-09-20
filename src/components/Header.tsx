@@ -1,7 +1,19 @@
+"use client"
 import Link from "next/link"
 import { ShoppingCart, Search, MapPin, Phone, User, Menu, Smartphone, Laptop, Tablet, Watch, Headphones, Monitor, RotateCcw, CreditCard } from "lucide-react"
+import { useCart } from "@/context/CartContext"
+import { useAuth } from "@/context/AuthContext";
 
 export default function Header() {
+
+  //
+  const { user } = useAuth();
+  console.log("User in Header:", user);
+  // Lấy số lượng sản phẩm trong giỏ hàng từ context
+  const cart = useCart();
+  const items = cart?.items || [];
+  const cartItemCount = items?.reduce((total, item) => total + item.quantity, 0);
+
   return (
     <>
       {/* Top bar */}
@@ -56,7 +68,7 @@ export default function Header() {
                 <User size={20} />
                 <div className="hidden md:block">
                   <div className="text-xs text-gray-500">Tài khoản</div>
-                  <div className="text-sm font-medium">Đăng nhập</div>
+                  <div className="text-sm font-medium">{user?.userName || "Đăng nhập"}</div>
                 </div>
               </Link>
 
@@ -65,12 +77,12 @@ export default function Header() {
                 <div className="relative">
                   <ShoppingCart size={24} />
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                    0
+                    {cartItemCount}
                   </span>
                 </div>
                 <div className="hidden md:block">
                   <div className="text-xs text-gray-500">Giỏ hàng</div>
-                  <div className="text-sm font-medium">0 sản phẩm</div>
+                  <div className="text-sm font-medium">{cartItemCount} sản phẩm</div>
                 </div>
               </Link>
             </div>
@@ -81,54 +93,55 @@ export default function Header() {
         <div className="bg-orange-600 text-white">
           <div className="container mx-auto px-4">
             <nav className="flex items-center gap-0">
-              <Link href="/dien-thoai" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/dien-thoai" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Smartphone size={16} />
                   <span>Điện thoại</span>
                 </div>
               </Link>
-              <Link href="/laptop" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/laptop" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Laptop size={16} />
                   <span>Laptop</span>
                 </div>
               </Link>
-              <Link href="/tablet" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/tablet" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Tablet size={16} />
                   <span>Tablet</span>
                 </div>
               </Link>
-              <Link href="/dong-ho" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/dong-ho" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Watch size={16} />
                   <span>Đồng hồ</span>
                 </div>
               </Link>
-              <Link href="/phu-kien" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/phu-kien" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Headphones size={16} />
                   <span>Phụ kiện</span>
                 </div>
               </Link>
-              <Link href="/pc-gaming" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/pc-gaming" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <Monitor size={16} />
                   <span>PC Gaming</span>
                 </div>
               </Link>
-              <Link href="/may-cu" className="px-4 py-3 hover:bg-orange-700 transition-colors text-yellow-300">
+              <Link href="/catalog/may-cu" className="px-4 py-3 hover:bg-orange-700 transition-colors text-yellow-300">
                 <div className="flex items-center gap-2">
                   <RotateCcw size={16} />
                   <span>Máy cũ giá rẻ</span>
                 </div>
               </Link>
-              <Link href="/sim-the" className="px-4 py-3 hover:bg-orange-700 transition-colors">
+              <Link href="/catalog/sim-the" className="px-4 py-3 hover:bg-orange-700 transition-colors">
                 <div className="flex items-center gap-2">
                   <CreditCard size={16} />
                   <span>Sim, thẻ cào</span>
                 </div>
               </Link>
+
             </nav>
           </div>
         </div>
