@@ -12,6 +12,8 @@ export default function CatalogClient({ products }: { products: Product[] }) {
   const [priceRange, setPriceRange] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
+  console.log("Products in CatalogClient:", products);
+
   const filtered = category === "all" 
     ? products 
     : products.filter((p) => p.categoryId === category);
