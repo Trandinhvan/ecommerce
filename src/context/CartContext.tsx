@@ -1,11 +1,11 @@
 'use client'
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { getBasket, addItem, removeItem, clearBasket } from "../services/basketService";
+import { addToBasket, getBasket, removeItem, clearBasket } from "../services/basketService";
 
 interface CartContextType {
   items: any[];
   refreshBasket: () => void;
-  addToCart: (productId: string, quantity: number) => void;
+  addToCart: (item: { productId: string; productName: string; price: number; quantity: number }) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
 }
@@ -16,23 +16,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<any[]>([]);
 
   const refreshBasket = async () => {
-  const data = await getBasket();
-  setItems(data?.items ?? []); // fallback [] nếu null
-};
+    const data = await getBasket();
+    setItems(data?.items ?? []); // fallback [] nếu null
+  };
 
-  const addToCart = async (productId: string, quantity: number) => {
-    await addItem(productId, quantity);
-    refreshBasket();
+  // cần sửa lại addToCart để tương thích ở các trang, hiện tại các component đang gọi trực tiếp đến services
+  const addToCart = async (item: { productId: string; productName: string; price: number; quantity: number }) => {
+    await addToBasket({
+      productId: Number(item.productId), // Chuyển productId từ string sang number
+      productName: item.productName,
+      price: item.price,
+      quantity: item.quantity,
+    });
+    await refreshBasket();
   };
 
   const removeFromCart = async (productId: string) => {
     await removeItem(productId);
-    refreshBasket();
+    await refreshBasket();
   };
 
-  const clearCartFn = async () => {
+  const clearCart = async () => {
     await clearBasket();
-    refreshBasket();
+    await refreshBasket();
   };
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <CartContext.Provider value={{ items, refreshBasket, addToCart, removeFromCart, clearCart: clearCartFn }}>
+    <CartContext.Provider value={{ items, refreshBasket, addToCart, removeFromCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );

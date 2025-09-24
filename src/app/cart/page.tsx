@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, X, ShoppingCart, Gift, Shield, Truck, ArrowLeft, CreditCard } from "lucide-react";
+import { Minus, Plus, X, ShoppingCart, Gift, Shield, Truck, ArrowLeft, CreditCard, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { getProductById } from "@/services/catalogService";
+import { clearBasket, removeFromBasket, updateBasketQuantity } from "@/services/basketService";
 
 interface CartItem {
   id: number;
@@ -26,6 +27,7 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [promoCode, setPromoCode] = useState("");
   const [isPromoApplied, setIsPromoApplied] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   // 🔹 Fetch product details từ API dựa vào cart.items
   useEffect(() => {
@@ -61,17 +63,54 @@ export default function CartPage() {
     return new Intl.NumberFormat("vi-VN").format(price) + "₫";
   };
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
+  const updateQuantity = async (id: number, newQuantity: number) => {
+    console.log("newQuantity", newQuantity);
+  if (newQuantity < 1) {
+    // Nếu giảm về 0 thì xóa khỏi giỏ hàng
+    await removeFromBasket(id);
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    return;
+  }
+  try {
+    await updateBasketQuantity(id, newQuantity);
     setCartItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, quantity: newQuantity } : item
       )
     );
+  } catch (error) {
+    alert("Cập nhật số lượng thất bại!");
+  }
+};
+
+  const removeItem = async (id: number) => {
+    try {
+      console.log("Removing product with ID:", id);
+      await removeFromBasket(id); // Gọi API xóa trên backend
+    setCartItems((prev) => prev.filter((item) => item.id !== id)); // Xóa trên frontend
+    } catch (error) {
+      alert("Xóa sản phẩm thất bại!");
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const clearAllItems = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {
+      return;
+    }
+
+    setIsClearing(true);
+    
+    try {
+      await clearBasket(); // Gọi API xóa tất cả trên backend
+      
+      setCartItems([]);
+      setIsPromoApplied(false);
+      setPromoCode("");
+    } catch (error) {
+      alert("Xóa giỏ hàng thất bại!");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   const applyPromoCode = () => {
@@ -120,7 +159,7 @@ export default function CartPage() {
             <p className="text-gray-600 mb-8">
               Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm
             </p>
-            <Link href="/products">
+            <Link href="/catalog">
               <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
                 Tiếp tục mua sắm
               </button>
@@ -137,12 +176,22 @@ export default function CartPage() {
                       <ShoppingCart size={24} className="text-orange-500" />
                       Giỏ hàng của bạn ({cartItems.length} sản phẩm)
                     </h2>
-                    <Link href="/products">
-                      <button className="text-orange-600 hover:text-orange-700 flex items-center gap-1 text-sm font-medium">
-                        <ArrowLeft size={16} />
-                        Tiếp tục mua sắm
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={clearAllItems}
+                        disabled={isClearing}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 size={16} />
+                        {isClearing ? "Đang xóa..." : "Xóa tất cả"}
                       </button>
-                    </Link>
+                      <Link href="/catalog">
+                        <button className="text-orange-600 hover:text-orange-700 flex items-center gap-1 text-sm font-medium">
+                          <ArrowLeft size={16} />
+                          Tiếp tục mua sắm
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
 

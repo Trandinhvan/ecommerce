@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Star, Gift, Zap, Heart, Eye, ShoppingCart } from "lucide-react"
 import { addToBasket } from "@/services/basketService";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   id: number;
@@ -25,16 +26,15 @@ interface Product {
 export default function ProductCard({ product }: { product: Product }) {
   const { id, name, price, originalPrice, imageUrl, categoryName, discount, rating, reviewCount, gift, isHot, isNew, installment, specs } = product;
 
+  const { refreshBasket} = useCart();
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫'
   }
   
   const handleAddToBasket = async () => {
     try {
-      const listBasket = [
-        { productId: id, productName: name, price: price, quantity: 1 }
-      ];
-      await addToBasket(listBasket);
+      await addToBasket({ productId: id, productName: name, price: price, quantity: 1 });
+      refreshBasket();
     } catch (error) {
       console.log("Error adding to basket:", error);
     }
