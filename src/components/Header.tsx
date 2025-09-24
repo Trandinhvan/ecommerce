@@ -5,10 +5,8 @@ import { useCart } from "@/context/CartContext"
 import { useAuth } from "@/context/AuthContext";
 
 export default function Header() {
-
   //
   const { user } = useAuth();
-  console.log("User in Header:", user);
   // Lấy số lượng sản phẩm trong giỏ hàng từ context
   const cart = useCart();
   const items = cart?.items || [];
