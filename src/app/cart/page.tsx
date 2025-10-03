@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, X, ShoppingCart, Gift, Shield, Truck, ArrowLeft, CreditCard, Trash2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { getProductById } from "@/services/catalogService";
 import { clearBasket, removeFromBasket, updateBasketQuantity } from "@/services/basketService";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { placeOrder } from "@/services/orderingService";
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
@@ -29,6 +32,9 @@ export default function CartPage() {
   const [isPromoApplied, setIsPromoApplied] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
+  const router = useRouter();
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
   // 🔹 Fetch product details từ API dựa vào cart.items
   useEffect(() => {
     async function fetchProducts() {
@@ -38,7 +44,7 @@ export default function CartPage() {
       const merged = items.map((item) => {
         const product = products.find((p) => p.id === item.productId);
         return {
-          id: item.productId,
+          id: String(item.productId),
           name: product?.name || "Sản phẩm",
           price: product?.price || 0,
           originalPrice: product?.originalPrice,
@@ -63,29 +69,28 @@ export default function CartPage() {
     return new Intl.NumberFormat("vi-VN").format(price) + "₫";
   };
 
-  const updateQuantity = async (id: number, newQuantity: number) => {
+  const updateQuantity = async (id: string, newQuantity: number) => {
     console.log("newQuantity", newQuantity);
-  if (newQuantity < 1) {
-    // Nếu giảm về 0 thì xóa khỏi giỏ hàng
-    await removeFromBasket(id);
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-    return;
-  }
-  try {
-    await updateBasketQuantity(id, newQuantity);
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  } catch (error) {
-    alert("Cập nhật số lượng thất bại!");
-  }
+    if (newQuantity < 1) {
+      // Nếu giảm về 0 thì xóa khỏi giỏ hàng
+      await removeFromBasket(id);
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+      return;
+    }
+    try {
+      await updateBasketQuantity(id, newQuantity);
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } catch (error) {
+      alert("Cập nhật số lượng thất bại!");
+    }
 };
 
-  const removeItem = async (id: number) => {
+  const removeItem = async (id: string) => {
     try {
-      console.log("Removing product with ID:", id);
       await removeFromBasket(id); // Gọi API xóa trên backend
     setCartItems((prev) => prev.filter((item) => item.id !== id)); // Xóa trên frontend
     } catch (error) {
@@ -97,17 +102,22 @@ export default function CartPage() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?")) {
       return;
     }
-
     setIsClearing(true);
-    
+
     try {
       await clearBasket(); // Gọi API xóa tất cả trên backend
-      
+
       setCartItems([]);
       setIsPromoApplied(false);
       setPromoCode("");
+
+      toast.success("Đã xóa toàn bộ giỏ hàng", {
+        description: "Giỏ hàng của bạn hiện đang trống",
+      });
     } catch (error) {
-      alert("Xóa giỏ hàng thất bại!");
+      toast.error("Xóa giỏ hàng thất bại", {
+        description: "Vui lòng thử lại sau",
+      });
     } finally {
       setIsClearing(false);
     }
@@ -133,6 +143,31 @@ export default function CartPage() {
   const shippingFee = subtotal >= 500000 ? 0 : 30000; // Free ship từ 500k
   const total = subtotal - promoDiscount + shippingFee;
 
+
+// 💳 Checkout
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+    setIsPlacingOrder(true);
+    try {
+      // Chỉ gửi list sản phẩm lên backend
+      const orderItems = cartItems.map((item) => ({
+        productId: item.id.toString(),
+        productName: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const result = await placeOrder({ items: orderItems });
+      toast.success(`Đặt hàng thành công (ID: ${result.orderId})`);
+      cart.clearCart();
+      router.push("/orders");
+    } catch (error) {
+      toast.error("Đặt hàng thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
@@ -408,9 +443,11 @@ export default function CartPage() {
                 </div>
 
                 {/* Checkout Button */}
-                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold text-lg transition-colors flex items-center justify-center gap-2 mb-3">
-                  <CreditCard size={20} />
-                  Tiến hành thanh toán
+                <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold text-lg transition-colors flex items-center justify-center gap-2 mb-3"
+                  onClick={handleCheckout}
+                  disabled={isPlacingOrder}
+                >
+                  {isPlacingOrder ? "Đang xử lý..." : <Fragment><CreditCard size={20} /> Tiến hành thanh toán</Fragment>}
                 </button>
 
                 {/* Payment Methods */}

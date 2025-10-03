@@ -1,11 +1,12 @@
 'use client'
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { addToBasket, getBasket, removeItem, clearBasket } from "../services/basketService";
+import { addToBasket, getBasket, clearBasket } from "../services/basketService";
+import { BasketItem } from "@/types/Basket";
 
 interface CartContextType {
-  items: any[];
+  items: BasketItem[];
   refreshBasket: () => void;
-  addToCart: (item: { productId: string; productName: string; price: number; quantity: number }) => void;
+  addToCart: (item: BasketItem) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
 }
@@ -13,26 +14,20 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<BasketItem[]>([]);
 
   const refreshBasket = async () => {
     const data = await getBasket();
-    setItems(data?.items ?? []); // fallback [] nếu null
+    setItems(data?.items ?? []);
   };
 
-  // cần sửa lại addToCart để tương thích ở các trang, hiện tại các component đang gọi trực tiếp đến services
-  const addToCart = async (item: { productId: string; productName: string; price: number; quantity: number }) => {
-    await addToBasket({
-      productId: Number(item.productId), // Chuyển productId từ string sang number
-      productName: item.productName,
-      price: item.price,
-      quantity: item.quantity,
-    });
+  const addToCart = async (item: BasketItem) => {
+    await addToBasket(item);
     await refreshBasket();
   };
 
   const removeFromCart = async (productId: string) => {
-    await removeItem(productId);
+    // await removeItem(productId); // backend chưa có
     await refreshBasket();
   };
 

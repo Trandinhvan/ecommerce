@@ -6,9 +6,9 @@ export default function NotificationList() {
 
     return (
         <div className="fixed top-4 right-4 w-80">
-            {messages?.map((msg : any, idx: number) => (
+            {messages?.map((msg: string, idx: number) => (
                 <div key={idx} className="bg-yellow-300 p-2 mb-2 rounded shadow">
-                {msg}
+                    {msg}
                 </div>
             ))}
         </div>

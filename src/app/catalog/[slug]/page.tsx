@@ -1,39 +1,36 @@
-import { getCategories, getProducts } from '@/services/catalogService';
-import { Product } from '@/types/Product';
-import CatalogClient from '../CatalogClient';
-import { Category } from '@/types/Category';
-import { get } from 'http';
+import { getCategories, getProducts } from '@/services/catalogService'
+import { Product } from '@/types/Product'
+import { Category } from '@/types/Category'
+import CatalogClient from '../CatalogClient'
 
-interface Props {
-  params: { slug: string };
-}
+// Next.js 15 -> params là Promise<{ slug: string }>
+type Params = Promise<{ slug: string }>
 
-export default async function CatalogByCategory({ params }: Props) {
-  const products: Product[] = await getProducts();
+export default async function CatalogByCategory(props: { params: Params }) {
+  const params = await props.params
+  const { slug } = params
 
-  const category: Category[] = await getCategories();
-  const categoryMap: Record<string, string> = {};
-  category.forEach((cat) => {
-    categoryMap[cat.name] = cat.id;
-  });
-  // Map slug -> categoryId (hardcode tạm)
-  // const categoryMap: Record<string, string> = {
-  //   "dien-thoai": "1",
-  //   "laptop": "550E8400-E29B-41D4-A716-446625640000",
-  //   "tablet": "3",
-  //   "dong-ho": "4",
-  //   "phu-kien": "5",
-  //   "pc-gaming": "6",
-  //   "may-cu": "7",
-  //   "sim-the": "8",
-  // };
+  const products: Product[] = await getProducts()
+  const categories: Category[] = await getCategories()
 
-  const categoryId = categoryMap[params.slug];
+  const targetCategory = categories.find((cat) => cat.name === slug)
+  const categoryId = targetCategory?.id
 
   const filtered = categoryId
-  ? products.filter((p) => p.categoryId.toLowerCase() === categoryId.toLowerCase())
-  : products;
+    ? products.filter(
+        (p) =>
+          p.categoryId &&
+          p.categoryId.toLowerCase() === categoryId.toLowerCase(),
+      )
+    : products
 
+  return <CatalogClient products={filtered} />
+}
 
-  return <CatalogClient products={filtered} />;
+// ✅ generateStaticParams vẫn return object thường, không cần Promise
+export async function generateStaticParams() {
+  const categories: Category[] = await getCategories()
+  return categories.map((cat) => ({
+    slug: cat.name,
+  }))
 }

@@ -5,23 +5,7 @@ import Image from "next/image"
 import { Star, Gift, Zap, Heart, Eye, ShoppingCart } from "lucide-react"
 import { addToBasket } from "@/services/basketService";
 import { useCart } from "@/context/CartContext";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  imageUrl: string;
-  categoryName?: string;
-  discount?: number;
-  rating?: number;
-  reviewCount?: number;
-  gift?: string;
-  isHot?: boolean;
-  isNew?: boolean;
-  installment?: string;
-  specs?: string[];
-}
+import { Product } from "@/types/Product";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { id, name, price, originalPrice, imageUrl, categoryName, discount, rating, reviewCount, gift, isHot, isNew, installment, specs } = product;

@@ -21,7 +21,7 @@
 
 import api from "./api";
 
-export const addToBasket = async (item: { productId: number; productName: string; price: number; quantity: number }) => {
+export const addToBasket = async (item: { productId: string; productName: string; price: number; quantity: number }) => {
   const res = await api.post("/api/basket", item);
   return res.data;
 };
@@ -32,12 +32,12 @@ export const getBasket = async () => {
 };
 
 
-export const updateBasketQuantity = async (productId: number, quantity: number) => {
+export const updateBasketQuantity = async (productId: string, quantity: number) => {
   const res = await api.put(`/api/basket/${productId}`, { quantity });
   return res.data;
 };
 
-export const removeFromBasket = async (productId: number) => {
+export const removeFromBasket = async (productId: string) => {
   console.log("Removing product with ID:", productId);
   const res = await api.delete(`/api/basket/${productId}`);
   return res.data;
