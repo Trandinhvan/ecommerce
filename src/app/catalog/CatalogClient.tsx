@@ -4,7 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import { Product } from "@/types/Product";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Grid, List, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Grid, List, ChevronDown } from "lucide-react";
 
 export default function CatalogClient({ products }: { products: Product[] }) {
   const [category, setCategory] = useState<string>("all");
@@ -14,9 +14,11 @@ export default function CatalogClient({ products }: { products: Product[] }) {
 
   console.log("Products in CatalogClient:", products);
 
-  const filtered = category === "all" 
-    ? products 
-    : products.filter((p) => p.categoryId === category);
+  // Filter theo category
+  const filtered =
+    category === "all"
+      ? products
+      : products.filter((p) => p.categoryId === category);
 
   // Sort products
   const sortedProducts = [...filtered].sort((a, b) => {
@@ -28,40 +30,46 @@ export default function CatalogClient({ products }: { products: Product[] }) {
       case "name":
         return a.name.localeCompare(b.name);
       case "newest":
-        return b.id - a.id; // assuming higher id = newer
+        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
       default:
         return 0;
     }
   });
 
   // Filter by price range
-  const finalProducts = priceRange === "all" 
-    ? sortedProducts
-    : sortedProducts.filter(p => {
-        switch (priceRange) {
-          case "under-10":
-            return p.price < 10000000;
-          case "10-20":
-            return p.price >= 10000000 && p.price <= 20000000;
-          case "20-30":
-            return p.price >= 20000000 && p.price <= 30000000;
-          case "over-30":
-            return p.price > 30000000;
-          default:
-            return true;
-        }
-      });
+  const finalProducts =
+    priceRange === "all"
+      ? sortedProducts
+      : sortedProducts.filter((p) => {
+          switch (priceRange) {
+            case "under-10":
+              return p.price < 10000000;
+            case "10-20":
+              return p.price >= 10000000 && p.price <= 20000000;
+            case "20-30":
+              return p.price >= 20000000 && p.price <= 30000000;
+            case "over-30":
+              return p.price > 30000000;
+            default:
+              return true;
+          }
+        });
 
-  const categories = Array.from(new Set(products.map((p) => p.categoryId)));
+  // Lấy list category, lọc undefined
+  const categories = Array.from(
+    new Set(products.map((p) => p.categoryId).filter((id): id is string => !!id))
+  );
 
   // Map categoryId -> categoryName
   const categoryMap: Record<string, string> = {};
   products.forEach((p) => {
-    categoryMap[p.categoryId] = p.categoryName;
+    if (p.categoryId && p.categoryName) {
+      categoryMap[p.categoryId] = p.categoryName;
+    }
   });
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + '₫';
+    return new Intl.NumberFormat("vi-VN").format(price) + "₫";
   };
 
   return (
@@ -112,7 +120,8 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                   }`}
                   onClick={() => setCategory(catId)}
                 >
-                  {categoryMap[catId]} ({products.filter(p => p.categoryId === catId).length})
+                  {categoryMap[catId] ?? "Không rõ"} (
+                  {products.filter((p) => p.categoryId === catId).length})
                 </button>
               ))}
             </div>
@@ -133,7 +142,10 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                     <option value="20-30">20 - 30 triệu</option>
                     <option value="over-30">Trên 30 triệu</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <ChevronDown
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={16}
+                  />
                 </div>
 
                 {/* Sort */}
@@ -149,7 +161,10 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                     <option value="name">Tên A-Z</option>
                     <option value="newest">Mới nhất</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <ChevronDown
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    size={16}
+                  />
                 </div>
               </div>
 
@@ -158,8 +173,8 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`p-2 rounded ${
-                    viewMode === "grid" 
-                      ? "bg-orange-500 text-white" 
+                    viewMode === "grid"
+                      ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
@@ -168,8 +183,8 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                 <button
                   onClick={() => setViewMode("list")}
                   className={`p-2 rounded ${
-                    viewMode === "list" 
-                      ? "bg-orange-500 text-white" 
+                    viewMode === "list"
+                      ? "bg-orange-500 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
@@ -205,16 +220,20 @@ export default function CatalogClient({ products }: { products: Product[] }) {
                 {viewMode === "grid" ? (
                   <ProductCard product={product} />
                 ) : (
-                  /* List View - Simple implementation */
+                  /* List View */
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4">
-                    <img 
-                      src={product.imageUrl} 
+                    <img
+                      src={product.imageUrl}
                       alt={product.name}
                       className="w-20 h-20 object-cover rounded"
                     />
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 mb-1">{product.name}</h3>
-                      <p className="text-sm text-gray-600 mb-2">{product.categoryName}</p>
+                      <h3 className="font-semibold text-gray-800 mb-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {product.categoryName}
+                      </p>
                       <div className="text-lg font-bold text-orange-600">
                         {formatPrice(product.price)}
                       </div>

@@ -3,21 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Star, Gift, Zap, Tag } from "lucide-react"
-
-interface Product {
-  id: number
-  name: string
-  price: number
-  originalPrice?: number
-  imageUrl: string
-  discount?: number
-  rating?: number
-  reviewCount?: number
-  gift?: string
-  isHot?: boolean
-  isNew?: boolean
-  installment?: string
-}
+import { Product } from "@/types/Product"
 
 export default function ProductGrid({ products }: { products: Product[] }) {
   const formatPrice = (price: number) => {
